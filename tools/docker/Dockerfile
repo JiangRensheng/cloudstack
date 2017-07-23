@@ -19,7 +19,7 @@
 
 FROM ubuntu:16.04
 
-MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
+MAINTAINER "deepsecs" <jiangrs@deepsecs.com>
 LABEL Vendor="Apache.org" License="ApacheV2" Version="4.11.0.0-SNAPSHOT"
 
 RUN apt-get -y update && apt-get install -y \
@@ -48,10 +48,11 @@ RUN apt-get install -qqy mysql-server && \
 RUN echo '''sql_mode = "STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"''' >> /etc/mysql/mysql.conf.d/mysqld.cnf
 RUN (/usr/bin/mysqld_safe &); sleep 5; mysqladmin -u root -proot password ''
 
-#RUN pip install --allow-external mysql-connector-python mysql-connector-python
-
 COPY tools/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . ./root
+ADD tools/deepsecs/patchs/maven/config/settings.xml /root/.m2/settings.xml
+ADD tools/deepsecs/patchs/juniper-contrail/pom.xml /root/plugins/network-elements/juniper-contrail/pom.xml
+ADD tools/deepsecs/patchs/juniper-contrail/1.0-SNAPSHOT.tar /root/.m2/repository/net/juniper/contrail/juniper-contrail-api
 WORKDIR /root
 
 RUN mvn -Pdeveloper -Dsimulator -DskipTests clean install
@@ -61,6 +62,7 @@ RUN (/usr/bin/mysqld_safe &); \
     mvn -Pdeveloper -pl developer -Ddeploydb; \
     mvn -Pdeveloper -pl developer -Ddeploydb-simulator; \
     MARVIN_FILE=`find /root/tools/marvin/dist/ -name "Marvin*.tar.gz"`; \
+    pip install --upgrade pip; \
     pip install $MARVIN_FILE
 
 EXPOSE 8080 8096
